@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User, UserRole } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class UserService {
@@ -16,7 +21,11 @@ export class UserService {
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return this.toResponse(user);
+    return user;
+  }
+
+  findOneResponse(id: string) {
+    return this.toResponse(this.findOne(id));
   }
 
   create(createUserDto: CreateUserDto) {
@@ -30,6 +39,16 @@ export class UserService {
     };
     this.users.push(newUser);
     return this.toResponse(newUser);
+  }
+
+  updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
+    const user = this.findOne(id);
+    if (user.password !== updatePasswordDto.oldPassword) {
+      throw new ForbiddenException('Old password is wrong');
+    }
+    user.password = updatePasswordDto.newPassword;
+    user.updatedAt = Date.now();
+    return this.toResponse(user);
   }
 
   private toResponse(user: User) {
