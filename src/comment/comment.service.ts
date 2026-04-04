@@ -34,4 +34,24 @@ export class CommentService {
     this.comments.push(newComment);
     return newComment;
   }
+
+  findAllByArticleId(articleId: string) {
+    return this.comments.filter((c) => c.articleId === articleId);
+  }
+
+  remove(id: string) {
+    const index = this.comments.findIndex((c) => c.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`Comment with id ${id} not found`);
+    }
+    this.comments.splice(index, 1);
+  }
+
+  removeByArticleId(articleId: string) {
+    this.comments = this.comments.filter((c) => c.articleId !== articleId);
+  }
+
+  removeByAuthorId(authorId: string) {
+    this.comments = this.comments.filter((c) => c.authorId !== authorId);
+  }
 }
