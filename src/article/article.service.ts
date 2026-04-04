@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Article, ArticleStatus } from './article.interface';
 import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
 
 @Injectable()
 export class ArticleService {
@@ -45,5 +46,45 @@ export class ArticleService {
     };
     this.articles.push(newArticle);
     return newArticle;
+  }
+
+  update(id: string, updateArticleDto: UpdateArticleDto) {
+    const article = this.findOne(id);
+
+    if (updateArticleDto.title !== undefined)
+      article.title = updateArticleDto.title;
+    if (updateArticleDto.content !== undefined)
+      article.content = updateArticleDto.content;
+    if (updateArticleDto.status !== undefined)
+      article.status = updateArticleDto.status;
+    if (updateArticleDto.authorId !== undefined)
+      article.authorId = updateArticleDto.authorId;
+    if (updateArticleDto.categoryId !== undefined)
+      article.categoryId = updateArticleDto.categoryId;
+    if (updateArticleDto.tags !== undefined)
+      article.tags = updateArticleDto.tags;
+
+    article.updatedAt = Date.now();
+    return article;
+  }
+
+  remove(id: string) {
+    const index = this.articles.findIndex((a) => a.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`Article with id ${id} not found`);
+    }
+    this.articles.splice(index, 1);
+  }
+
+  clearAuthorId(userId: string) {
+    this.articles.forEach((a) => {
+      if (a.authorId === userId) a.authorId = null;
+    });
+  }
+
+  clearCategoryId(categoryId: string) {
+    this.articles.forEach((a) => {
+      if (a.categoryId === categoryId) a.categoryId = null;
+    });
   }
 }
