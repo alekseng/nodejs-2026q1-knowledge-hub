@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { User } from './user.interface';
+import { randomUUID } from 'crypto';
+import { User, UserRole } from './user.interface';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
@@ -15,6 +17,19 @@ export class UserService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
     return this.toResponse(user);
+  }
+
+  create(createUserDto: CreateUserDto) {
+    const now = Date.now();
+    const newUser: User = {
+      id: randomUUID(),
+      ...createUserDto,
+      role: createUserDto.role || UserRole.VIEWER,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.users.push(newUser);
+    return this.toResponse(newUser);
   }
 
   private toResponse(user: User) {
