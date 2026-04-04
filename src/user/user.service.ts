@@ -51,6 +51,14 @@ export class UserService {
     return this.toResponse(user);
   }
 
+  remove(id: string) {
+    const index = this.users.findIndex((u) => u.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    this.users.splice(index, 1);
+  }
+
   private toResponse(user: User) {
     const { password, ...result } = user;
     return result;
