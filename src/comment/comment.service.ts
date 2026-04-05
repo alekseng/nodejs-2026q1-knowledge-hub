@@ -44,6 +44,14 @@ export class CommentService {
     return this.comments.filter((c) => c.articleId === articleId);
   }
 
+  findOne(id: string) {
+    const comment = this.comments.find((c) => c.id === id);
+    if (!comment) {
+      throw new NotFoundException(`Comment with id ${id} not found`);
+    }
+    return comment;
+  }
+
   remove(id: string) {
     const index = this.comments.findIndex((c) => c.id === id);
     if (index === -1) {

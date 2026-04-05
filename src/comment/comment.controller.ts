@@ -42,6 +42,15 @@ export class CommentController {
     return this.commentService.findAllByArticleId(articleId);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Get single comment by id' })
+  @ApiResponse({ status: 200, description: 'The record found' })
+  @ApiBadRequestResponse({ description: 'CommentId is invalid (not uuid)' })
+  @ApiNotFoundResponse({ description: 'Record not found' })
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.commentService.findOne(id);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create new comment' })
   @ApiResponse({ status: 201, description: 'Newly created record' })
