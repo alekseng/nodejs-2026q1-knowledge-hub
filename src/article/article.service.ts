@@ -5,10 +5,12 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
+import { CommentService } from '../comment/comment.service';
 import { Article, ArticleStatus } from './article.interface';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
-import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class ArticleService {
@@ -18,17 +20,47 @@ export class ArticleService {
   ) {}
   private articles: Article[] = [];
 
-  findAll(status?: ArticleStatus, categoryId?: string, tag?: string) {
-    let result = this.articles;
+  findAll(pagination?: PaginationDto): PaginatedResult<Article> | Article[] {
+    let result = [...this.articles];
 
-    if (status) {
-      result = result.filter((a) => a.status === status);
+    if (pagination?.status) {
+      result = result.filter((a) => a.status === pagination.status);
     }
-    if (categoryId) {
-      result = result.filter((a) => a.categoryId === categoryId);
+    if (pagination?.categoryId) {
+      result = result.filter((a) => a.categoryId === pagination.categoryId);
     }
-    if (tag) {
-      result = result.filter((a) => a.tags.includes(tag));
+    if (pagination?.tag) {
+      result = result.filter((a) => a.tags.includes(pagination.tag));
+    }
+
+    if (pagination?.page || pagination?.limit) {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        order = 'ASC',
+      } = pagination;
+
+      if (sortBy) {
+        result.sort((a, b) => {
+          const valA = a[sortBy as keyof Article];
+          const valB = b[sortBy as keyof Article];
+          if (valA < valB) return order === 'ASC' ? -1 : 1;
+          if (valA > valB) return order === 'ASC' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      const total = result.length;
+      const startIndex = (page - 1) * limit;
+      const data = result.slice(startIndex, startIndex + limit);
+
+      return {
+        total,
+        page,
+        limit,
+        data,
+      };
     }
 
     return result;

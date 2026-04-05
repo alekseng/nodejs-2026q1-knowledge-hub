@@ -6,11 +6,13 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ArticleService } from '../article/article.service';
+import { CommentService } from '../comment/comment.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { User, UserRole } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { ArticleService } from '../article/article.service';
-import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class UserService {
@@ -22,7 +24,43 @@ export class UserService {
   ) {}
   private users: User[] = [];
 
-  findAll() {
+  findAll(
+    pagination?: PaginationDto,
+  ): PaginatedResult<Partial<User>> | Partial<User>[] {
+    const result = [...this.users];
+
+    if (pagination?.page || pagination?.limit) {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        order = 'ASC',
+      } = pagination;
+
+      if (sortBy) {
+        result.sort((a, b) => {
+          const valA = a[sortBy as keyof User];
+          const valB = b[sortBy as keyof User];
+          if (valA < valB) return order === 'ASC' ? -1 : 1;
+          if (valA > valB) return order === 'ASC' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      const total = result.length;
+      const startIndex = (page - 1) * limit;
+      const data = result
+        .slice(startIndex, startIndex + limit)
+        .map((user) => this.toResponse(user));
+
+      return {
+        total,
+        page,
+        limit,
+        data,
+      };
+    }
+
     return this.users.map((user) => this.toResponse(user));
   }
 
@@ -72,8 +110,8 @@ export class UserService {
   }
 
   private toResponse(user: User) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...result } = user;
+    const result = { ...user };
+    delete (result as any).password;
     return result;
   }
 }

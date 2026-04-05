@@ -5,10 +5,12 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
+import { ArticleService } from '../article/article.service';
 import { Category } from './category.interface';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ArticleService } from '../article/article.service';
 
 @Injectable()
 export class CategoryService {
@@ -18,7 +20,39 @@ export class CategoryService {
   ) {}
   private categories: Category[] = [];
 
-  findAll() {
+  findAll(pagination?: PaginationDto): PaginatedResult<Category> | Category[] {
+    const result = [...this.categories];
+
+    if (pagination?.page || pagination?.limit) {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'name',
+        order = 'ASC',
+      } = pagination;
+
+      if (sortBy) {
+        result.sort((a, b) => {
+          const valA = a[sortBy as keyof Category];
+          const valB = b[sortBy as keyof Category];
+          if (valA < valB) return order === 'ASC' ? -1 : 1;
+          if (valA > valB) return order === 'ASC' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      const total = result.length;
+      const startIndex = (page - 1) * limit;
+      const data = result.slice(startIndex, startIndex + limit);
+
+      return {
+        total,
+        page,
+        limit,
+        data,
+      };
+    }
+
     return this.categories;
   }
 

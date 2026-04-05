@@ -6,9 +6,11 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ArticleService } from '../article/article.service';
+import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { Comment } from './comment.interface';
 import { CreateCommentDto } from './dto/create-comment.dto';
-import { ArticleService } from '../article/article.service';
+import { CommentPaginationDto } from './dto/comment-pagination.dto';
 
 @Injectable()
 export class CommentService {
@@ -40,8 +42,43 @@ export class CommentService {
     return newComment;
   }
 
-  findAllByArticleId(articleId: string) {
-    return this.comments.filter((c) => c.articleId === articleId);
+  findAllByArticleId(
+    pagination: CommentPaginationDto,
+  ): PaginatedResult<Comment> | Comment[] {
+    const { articleId } = pagination;
+    const result = this.comments.filter((c) => c.articleId === articleId);
+
+    if (pagination.page || pagination.limit) {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        order = 'ASC',
+      } = pagination;
+
+      if (sortBy) {
+        result.sort((a, b) => {
+          const valA = a[sortBy as keyof Comment];
+          const valB = b[sortBy as keyof Comment];
+          if (valA < valB) return order === 'ASC' ? -1 : 1;
+          if (valA > valB) return order === 'ASC' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      const total = result.length;
+      const startIndex = (page - 1) * limit;
+      const data = result.slice(startIndex, startIndex + limit);
+
+      return {
+        total,
+        page,
+        limit,
+        data,
+      };
+    }
+
+    return result;
   }
 
   findOne(id: string) {

@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CommentPaginationDto } from './dto/comment-pagination.dto';
 
 @ApiTags('comment')
 @Controller('comment')
@@ -36,10 +37,8 @@ export class CommentController {
   @ApiBadRequestResponse({
     description: 'ArticleId is required and must be uuid',
   })
-  findAll(
-    @Query('articleId', new ParseUUIDPipe({ version: '4' })) articleId: string,
-  ) {
-    return this.commentService.findAllByArticleId(articleId);
+  findAll(@Query() pagination: CommentPaginationDto) {
+    return this.commentService.findAllByArticleId(pagination);
   }
 
   @Get(':id')

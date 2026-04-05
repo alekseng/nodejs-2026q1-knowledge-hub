@@ -19,9 +19,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
-import { ArticleStatus } from './article.interface';
 import { UpdateArticleDto } from './dto/update-article.dto';
 
 @ApiTags('article')
@@ -32,12 +32,8 @@ export class ArticleController {
   @Get()
   @ApiOperation({ summary: 'Get all articles' })
   @ApiResponse({ status: 200, description: 'All article records' })
-  findAll(
-    @Query('status') status?: ArticleStatus,
-    @Query('categoryId') categoryId?: string,
-    @Query('tag') tag?: string,
-  ) {
-    return this.articleService.findAll(status, categoryId, tag);
+  findAll(@Query() pagination?: PaginationDto) {
+    return this.articleService.findAll(pagination);
   }
 
   @Get(':id')
