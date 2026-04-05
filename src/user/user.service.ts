@@ -7,9 +7,15 @@ import { randomUUID } from 'crypto';
 import { User, UserRole } from './user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { ArticleService } from '../article/article.service';
+import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class UserService {
+  constructor(
+    private readonly articleService: ArticleService,
+    private readonly commentService: CommentService,
+  ) {}
   private users: User[] = [];
 
   findAll() {
@@ -57,6 +63,8 @@ export class UserService {
       throw new NotFoundException(`User with id ${id} not found`);
     }
     this.users.splice(index, 1);
+    this.articleService.clearAuthorId(id);
+    this.commentService.removeByAuthorId(id);
   }
 
   private toResponse(user: User) {
