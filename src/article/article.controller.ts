@@ -11,7 +11,14 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { ArticleStatus } from './article.interface';
@@ -23,6 +30,8 @@ export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all articles' })
+  @ApiResponse({ status: 200, description: 'All article records' })
   findAll(
     @Query('status') status?: ArticleStatus,
     @Query('categoryId') categoryId?: string,
@@ -32,16 +41,29 @@ export class ArticleController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get single article by id' })
+  @ApiResponse({ status: 200, description: 'The record found' })
+  @ApiBadRequestResponse({ description: 'ArticleId is invalid (not uuid)' })
+  @ApiNotFoundResponse({ description: 'Record not found' })
   findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.articleService.findOne(id);
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create new article' })
+  @ApiResponse({ status: 201, description: 'Newly created record' })
+  @ApiBadRequestResponse({
+    description: 'Request body does not contain required fields',
+  })
   create(@Body() createArticleDto: CreateArticleDto) {
     return this.articleService.create(createArticleDto);
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Update article info' })
+  @ApiResponse({ status: 200, description: 'Updated record' })
+  @ApiBadRequestResponse({ description: 'ArticleId is invalid (not uuid)' })
+  @ApiNotFoundResponse({ description: 'Record not found' })
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateArticleDto: UpdateArticleDto,
@@ -51,6 +73,10 @@ export class ArticleController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete article' })
+  @ApiNoContentResponse({ description: 'The record is found and deleted' })
+  @ApiBadRequestResponse({ description: 'ArticleId is invalid (not uuid)' })
+  @ApiNotFoundResponse({ description: 'Record not found' })
   remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     this.articleService.remove(id);
   }
