@@ -1,11 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
-import { ArticleModule } from '../article/article.module';
-import { CommentModule } from '../comment/comment.module';
 
+@Global()
 @Module({
-  imports: [ArticleModule, CommentModule],
+  imports: [],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

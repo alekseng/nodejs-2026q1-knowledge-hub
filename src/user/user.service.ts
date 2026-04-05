@@ -1,7 +1,9 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { User, UserRole } from './user.interface';
@@ -13,7 +15,9 @@ import { CommentService } from '../comment/comment.service';
 @Injectable()
 export class UserService {
   constructor(
+    @Inject(forwardRef(() => ArticleService))
     private readonly articleService: ArticleService,
+    @Inject(forwardRef(() => CommentService))
     private readonly commentService: CommentService,
   ) {}
   private users: User[] = [];
@@ -68,6 +72,7 @@ export class UserService {
   }
 
   private toResponse(user: User) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;
     return result;
   }

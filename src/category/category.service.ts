@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Category } from './category.interface';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -7,7 +12,10 @@ import { ArticleService } from '../article/article.service';
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly articleService: ArticleService) {}
+  constructor(
+    @Inject(forwardRef(() => ArticleService))
+    private readonly articleService: ArticleService,
+  ) {}
   private categories: Category[] = [];
 
   findAll() {

@@ -11,10 +11,10 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    UserModule,
-    CategoryModule,
     ArticleModule,
     CommentModule,
+    CategoryModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

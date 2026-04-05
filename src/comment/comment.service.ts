@@ -1,7 +1,9 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
+  forwardRef,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Comment } from './comment.interface';
@@ -10,7 +12,10 @@ import { ArticleService } from '../article/article.service';
 
 @Injectable()
 export class CommentService {
-  constructor(private readonly articleService: ArticleService) {}
+  constructor(
+    @Inject(forwardRef(() => ArticleService))
+    private readonly articleService: ArticleService,
+  ) {}
   private comments: Comment[] = [];
 
   create(createCommentDto: CreateCommentDto) {
