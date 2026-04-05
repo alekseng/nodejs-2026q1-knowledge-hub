@@ -3,9 +3,11 @@ import { randomUUID } from 'crypto';
 import { Article, ArticleStatus } from './article.interface';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
+import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class ArticleService {
+  constructor(private readonly commentService: CommentService) {}
   private articles: Article[] = [];
 
   findAll(status?: ArticleStatus, categoryId?: string, tag?: string) {
@@ -74,6 +76,7 @@ export class ArticleService {
       throw new NotFoundException(`Article with id ${id} not found`);
     }
     this.articles.splice(index, 1);
+    this.commentService.removeByArticleId(id);
   }
 
   clearAuthorId(userId: string) {
