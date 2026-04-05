@@ -3,9 +3,11 @@ import { randomUUID } from 'crypto';
 import { Category } from './category.interface';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { ArticleService } from '../article/article.service';
 
 @Injectable()
 export class CategoryService {
+  constructor(private readonly articleService: ArticleService) {}
   private categories: Category[] = [];
 
   findAll() {
@@ -43,5 +45,6 @@ export class CategoryService {
       throw new NotFoundException(`Category with id ${id} not found`);
     }
     this.categories.splice(index, 1);
+    this.articleService.clearCategoryId(id);
   }
 }
