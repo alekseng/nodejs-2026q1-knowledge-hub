@@ -1,5 +1,28 @@
 # Knowledge Hub
 
+## Docker
+
+### Docker Image
+[Knowledge Hub API on Docker Hub](https://hub.docker.com/repository/docker/a1eks4e/nodejs-2026q1-knowledge-hub-app)
+
+### Running with Docker Compose
+1. Create a `.env` file from `.env.example`.
+2. Run the application:
+   ```bash
+   docker-compose up --build
+   ```
+3. To include Adminer (database management tool) available at http://localhost:8080:
+   ```bash
+   docker-compose --profile debug up
+   ```
+The API will be available at `http://localhost:4000`.
+
+### Security Scan Results
+Scan performed using `docker scout`.
+- **Critical vulnerabilities**: 0
+- **High vulnerabilities**: 0
+- **Status**: Clean
+
 ## Prerequisites
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
