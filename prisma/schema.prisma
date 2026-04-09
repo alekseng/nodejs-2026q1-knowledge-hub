@@ -1,13 +1,68 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  login     String    @unique
+  password  String
+  role      Role
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  articles  Article[]
+  comments  Comment[]
+}
+
+model Article {
+  id         String    @id @default(uuid())
+  title      String
+  content    String
+  status     Status
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  author     User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId   String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId String?
+  comments   Comment[]
+  tags       Tag[]     @relation("ArticleToTag")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  articles    Article[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  articleId String
+}
+
+model Tag {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  articles Article[] @relation("ArticleToTag")
 }
