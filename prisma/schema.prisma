@@ -43,6 +43,9 @@ model Article {
   categoryId String?
   comments   Comment[]
   tags       Tag[]     @relation("ArticleToTag")
+
+  @@index([status])
+  @@index([categoryId])
 }
 
 model Category {
@@ -66,4 +69,6 @@ model Tag {
   id       String    @id @default(uuid())
   name     String    @unique
   articles Article[] @relation("ArticleToTag")
+
+  @@index([name])
 }

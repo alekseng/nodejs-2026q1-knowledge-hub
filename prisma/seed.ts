@@ -29,34 +29,112 @@ async function main() {
     },
   });
 
-  const category1 = await prisma.category.create({
-    data: { name: 'Technology', description: 'Tech related articles' },
+  const category1 = await prisma.category.upsert({
+    where: { id: 'tech-category-id' },
+    update: {},
+    create: {
+      id: 'tech-category-id',
+      name: 'Technology',
+      description: 'Tech related articles',
+    },
   });
 
-  const tag1 = await prisma.tag.create({ data: { name: 'NodeJS' } });
-  const tag2 = await prisma.tag.create({ data: { name: 'Prisma' } });
-  const tag3 = await prisma.tag.create({ data: { name: 'Docker' } });
-  const tag4 = await prisma.tag.create({ data: { name: 'NestJS' } });
+  const category2 = await prisma.category.upsert({
+    where: { id: 'lifestyle-category-id' },
+    update: {},
+    create: {
+      id: 'lifestyle-category-id',
+      name: 'Lifestyle',
+      description: 'Lifestyle articles',
+    },
+  });
 
-  const article1 = await prisma.article.create({
-    data: {
+  const category3 = await prisma.category.upsert({
+    where: { id: 'news-category-id' },
+    update: {},
+    create: {
+      id: 'news-category-id',
+      name: 'News',
+      description: 'Daily news',
+    },
+  });
+
+  const tagsData = ['NodeJS', 'Prisma', 'Docker', 'NestJS', 'TypeScript'];
+  await Promise.all(
+    tagsData.map((name) =>
+      prisma.tag.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      }),
+    ),
+  );
+
+  const article1 = await prisma.article.upsert({
+    where: { id: 'article-1-id' },
+    update: {},
+    create: {
+      id: 'article-1-id',
       title: 'Getting Started with Prisma',
       content: 'Prisma is a great ORM...',
       status: Status.PUBLISHED,
       authorId: admin.id,
       categoryId: category1.id,
-      tags: { connect: [{ id: tag1.id }, { id: tag2.id }] },
+      tags: { connect: [{ name: 'NodeJS' }, { name: 'Prisma' }] },
     },
   });
 
-  const article2 = await prisma.article.create({
-    data: {
+  const article2 = await prisma.article.upsert({
+    where: { id: 'article-2-id' },
+    update: {},
+    create: {
+      id: 'article-2-id',
       title: 'Dockerizing NestJS',
       content: 'Docker makes deployment easy...',
       status: Status.PUBLISHED,
       authorId: editor.id,
       categoryId: category1.id,
-      tags: { connect: [{ id: tag3.id }, { id: tag4.id }] },
+      tags: { connect: [{ name: 'Docker' }, { name: 'NestJS' }] },
+    },
+  });
+
+  await prisma.article.upsert({
+    where: { id: 'article-3-id' },
+    update: {},
+    create: {
+      id: 'article-3-id',
+      title: 'TypeScript Best Practices',
+      content: 'Learn how to use TypeScript...',
+      status: Status.DRAFT,
+      authorId: admin.id,
+      categoryId: category1.id,
+      tags: { connect: [{ name: 'TypeScript' }] },
+    },
+  });
+
+  await prisma.article.upsert({
+    where: { id: 'article-4-id' },
+    update: {},
+    create: {
+      id: 'article-4-id',
+      title: 'Daily News 2026',
+      content: 'What is happening today...',
+      status: Status.PUBLISHED,
+      authorId: admin.id,
+      categoryId: category3.id,
+    },
+  });
+
+  await prisma.article.upsert({
+    where: { id: 'article-5-id' },
+    update: {},
+    create: {
+      id: 'article-5-id',
+      title: 'Lifestyle in 2026',
+      content: 'Healthy habits...',
+      status: Status.ARCHIVED,
+      authorId: editor.id,
+      categoryId: category2.id,
     },
   });
 

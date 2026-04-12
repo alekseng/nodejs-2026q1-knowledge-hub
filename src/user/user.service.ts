@@ -89,13 +89,17 @@ export class UserService {
   }
 
   async remove(id: string) {
-    try {
-      await this.prisma.user.delete({
+    await this.findOne(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.article.updateMany({
+        where: { authorId: id },
+        data: { authorId: null },
+      });
+
+      await tx.user.delete({
         where: { id },
       });
-    } catch (error) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
+    });
   }
 
   private toResponse(user: User) {
