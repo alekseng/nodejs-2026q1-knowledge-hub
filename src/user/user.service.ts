@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
@@ -63,25 +65,54 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { login: createUserDto.login },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('Login is already taken');
+    }
+
+    const rounds = parseInt(process.env.CRYPT_SALT, 10) || 10;
+    const hashedPassword = await bcrypt.hash(createUserDto.password, rounds);
+
     const newUser = await this.prisma.user.create({
       data: {
         ...createUserDto,
+        password: hashedPassword,
         role: (createUserDto.role || UserRole.VIEWER) as Role,
       },
     });
     return this.toResponse(newUser as unknown as User);
   }
 
+  async findByLogin(login: string) {
+    return this.prisma.user.findUnique({
+      where: { login },
+    });
+  }
+
   async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
     const user = await this.findOne(id);
-    if (user.password !== updatePasswordDto.oldPassword) {
+    const isPasswordMatching = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordMatching) {
       throw new ForbiddenException('Old password is wrong');
     }
+
+    const rounds = parseInt(process.env.CRYPT_SALT, 10) || 10;
+    const hashedPassword = await bcrypt.hash(
+      updatePasswordDto.newPassword,
+      rounds,
+    );
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
-        password: updatePasswordDto.newPassword,
+        password: hashedPassword,
       },
     });
 
