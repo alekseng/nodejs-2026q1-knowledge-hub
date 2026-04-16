@@ -1,0 +1,53 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Role } from '@prisma/client';
+import { ROLES_KEY } from '../decorators/roles.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    const { user, method } = context.switchToHttp().getRequest();
+
+    if (user.role === Role.ADMIN) {
+      return true;
+    }
+
+    if (user.role === Role.VIEWER && method !== 'GET') {
+      throw new ForbiddenException(
+        'Viewers are not allowed to perform this action',
+      );
+    }
+
+    if (requiredRoles) {
+      const hasRole = requiredRoles.some((role) => user.role === role);
+      if (!hasRole) {
+        throw new ForbiddenException(
+          'You do not have the required role to access this resource',
+        );
+      }
+    }
+
+    return true;
+  }
+}
