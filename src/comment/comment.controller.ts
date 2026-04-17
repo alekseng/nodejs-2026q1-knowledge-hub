@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
@@ -19,6 +20,7 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentPaginationDto } from './dto/comment-pagination.dto';
@@ -54,11 +56,17 @@ export class CommentController {
   @ApiOperation({ summary: 'Create new comment' })
   @ApiResponse({ status: 201, description: 'Newly created record' })
   @ApiBadRequestResponse({ description: 'Required fields are missing' })
+  @ApiForbiddenResponse({
+    description: 'Viewers are not allowed to create comments',
+  })
   @ApiUnprocessableEntityResponse({
     description: "Referenced articleId doesn't exist",
   })
-  create(@Body() createCommentDto: CreateCommentDto) {
-    return this.commentService.create(createCommentDto);
+  create(
+    @Body() createCommentDto: CreateCommentDto,
+    @GetUser('userId') userId: string,
+  ) {
+    return this.commentService.create(createCommentDto, userId);
   }
 
   @Delete(':id')
@@ -67,7 +75,13 @@ export class CommentController {
   @ApiNoContentResponse({ description: 'The record is found and deleted' })
   @ApiBadRequestResponse({ description: 'CommentId is invalid (not uuid)' })
   @ApiNotFoundResponse({ description: 'Record not found' })
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    this.commentService.remove(id);
+  @ApiForbiddenResponse({
+    description: 'Not authorized to delete this comment',
+  })
+  remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @GetUser() user: any,
+  ) {
+    this.commentService.remove(id, user);
   }
 }

@@ -1,8 +1,10 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { Comment } from './comment.interface';
@@ -13,8 +15,11 @@ import { CommentPaginationDto } from './dto/comment-pagination.dto';
 export class CommentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createCommentDto: CreateCommentDto): Promise<Comment> {
-    const { articleId, authorId, content } = createCommentDto;
+  async create(
+    createCommentDto: CreateCommentDto,
+    authorId: string,
+  ): Promise<Comment> {
+    const { articleId, content } = createCommentDto;
 
     const article = await this.prisma.article.findUnique({
       where: { id: articleId },
@@ -29,7 +34,7 @@ export class CommentService {
       data: {
         content,
         articleId,
-        authorId: authorId as string,
+        authorId,
       },
     });
 
@@ -82,7 +87,13 @@ export class CommentService {
     return this.mapToComment(comment);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: any): Promise<void> {
+    const commentToDelete = await this.findOne(id);
+
+    if (user.role !== Role.ADMIN && commentToDelete.authorId !== user.userId) {
+      throw new ForbiddenException('You can only delete your own comments');
+    }
+
     try {
       await this.prisma.comment.delete({
         where: { id },

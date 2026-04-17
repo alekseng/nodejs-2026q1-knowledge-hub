@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Status } from '@prisma/client';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Role, Status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
@@ -78,12 +82,16 @@ export class ArticleService {
     return this.mapToArticle(article);
   }
 
-  async create(createArticleDto: CreateArticleDto): Promise<Article> {
+  async create(
+    createArticleDto: CreateArticleDto,
+    authorId: string,
+  ): Promise<Article> {
     const { tags, ...data } = createArticleDto;
 
     const article = await this.prisma.article.create({
       data: {
         ...data,
+        authorId,
         status: (createArticleDto.status || ArticleStatus.DRAFT) as Status,
         tags: {
           connectOrCreate: tags?.map((tag) => ({
@@ -101,7 +109,14 @@ export class ArticleService {
   async update(
     id: string,
     updateArticleDto: UpdateArticleDto,
+    user: any,
   ): Promise<Article> {
+    const articleToUpdate = await this.findOne(id);
+
+    if (user.role !== Role.ADMIN && articleToUpdate.authorId !== user.userId) {
+      throw new ForbiddenException('You can only update your own articles');
+    }
+
     const { tags, ...data } = updateArticleDto;
 
     try {
@@ -131,7 +146,13 @@ export class ArticleService {
     }
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, user: any): Promise<void> {
+    const articleToDelete = await this.findOne(id);
+
+    if (user.role !== Role.ADMIN && articleToDelete.authorId !== user.userId) {
+      throw new ForbiddenException('You can only delete your own articles');
+    }
+
     try {
       await this.prisma.article.delete({
         where: { id },
