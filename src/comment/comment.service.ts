@@ -1,12 +1,9 @@
 import {
-  Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
-  forwardRef,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { ArticleService } from '../article/article.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { Comment } from './comment.interface';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -14,94 +11,90 @@ import { CommentPaginationDto } from './dto/comment-pagination.dto';
 
 @Injectable()
 export class CommentService {
-  constructor(
-    @Inject(forwardRef(() => ArticleService))
-    private readonly articleService: ArticleService,
-  ) {}
-  private comments: Comment[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  create(createCommentDto: CreateCommentDto) {
-    try {
-      this.articleService.findOne(createCommentDto.articleId);
-    } catch (e) {
-      if (e instanceof NotFoundException) {
-        throw new UnprocessableEntityException(
-          `Article with id ${createCommentDto.articleId} does not exist`,
-        );
-      }
-      throw e;
+  async create(createCommentDto: CreateCommentDto): Promise<Comment> {
+    const { articleId, authorId, content } = createCommentDto;
+
+    const article = await this.prisma.article.findUnique({
+      where: { id: articleId },
+    });
+    if (!article) {
+      throw new UnprocessableEntityException(
+        `Article with id ${articleId} does not exist`,
+      );
     }
 
-    const newComment: Comment = {
-      id: randomUUID(),
-      ...createCommentDto,
-      authorId: createCommentDto.authorId || null,
-      createdAt: Date.now(),
-    };
-    this.comments.push(newComment);
-    return newComment;
+    const comment = await this.prisma.comment.create({
+      data: {
+        content,
+        articleId,
+        authorId: authorId as string,
+      },
+    });
+
+    return this.mapToComment(comment);
   }
 
-  findAllByArticleId(
+  async findAllByArticleId(
     pagination: CommentPaginationDto,
-  ): PaginatedResult<Comment> | Comment[] {
-    const { articleId } = pagination;
-    const result = this.comments.filter((c) => c.articleId === articleId);
+  ): Promise<PaginatedResult<Comment> | Comment[]> {
+    const {
+      articleId,
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      order = 'ASC',
+    } = pagination;
+
+    const where = { articleId };
+    const total = await this.prisma.comment.count({ where });
 
     if (pagination.page || pagination.limit) {
-      const {
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        order = 'ASC',
-      } = pagination;
-
-      if (sortBy) {
-        result.sort((a, b) => {
-          const valA = a[sortBy as keyof Comment];
-          const valB = b[sortBy as keyof Comment];
-          if (valA < valB) return order === 'ASC' ? -1 : 1;
-          if (valA > valB) return order === 'ASC' ? 1 : -1;
-          return 0;
-        });
-      }
-
-      const total = result.length;
-      const startIndex = (page - 1) * limit;
-      const data = result.slice(startIndex, startIndex + limit);
+      const comments = await this.prisma.comment.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          [sortBy]: order.toLowerCase() as 'asc' | 'desc',
+        },
+      });
 
       return {
         total,
         page,
         limit,
-        data,
+        data: comments.map((c) => this.mapToComment(c)),
       };
     }
 
-    return result;
+    const comments = await this.prisma.comment.findMany({ where });
+    return comments.map((c) => this.mapToComment(c));
   }
 
-  findOne(id: string) {
-    const comment = this.comments.find((c) => c.id === id);
+  async findOne(id: string): Promise<Comment> {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id },
+    });
     if (!comment) {
       throw new NotFoundException(`Comment with id ${id} not found`);
     }
-    return comment;
+    return this.mapToComment(comment);
   }
 
-  remove(id: string) {
-    const index = this.comments.findIndex((c) => c.id === id);
-    if (index === -1) {
+  async remove(id: string): Promise<void> {
+    try {
+      await this.prisma.comment.delete({
+        where: { id },
+      });
+    } catch (error) {
       throw new NotFoundException(`Comment with id ${id} not found`);
     }
-    this.comments.splice(index, 1);
   }
-
-  removeByArticleId(articleId: string) {
-    this.comments = this.comments.filter((c) => c.articleId !== articleId);
-  }
-
-  removeByAuthorId(authorId: string) {
-    this.comments = this.comments.filter((c) => c.authorId !== authorId);
+  private mapToComment(comment: any): Comment {
+    return {
+      ...comment,
+      createdAt: comment.createdAt.getTime(),
+    };
   }
 }

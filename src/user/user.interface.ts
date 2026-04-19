@@ -1,7 +1,7 @@
 export enum UserRole {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  VIEWER = 'viewer',
+  ADMIN = 'ADMIN',
+  EDITOR = 'EDITOR',
+  VIEWER = 'VIEWER',
 }
 
 export interface User {
@@ -9,6 +9,6 @@ export interface User {
   login: string;
   password: string;
   role: UserRole;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

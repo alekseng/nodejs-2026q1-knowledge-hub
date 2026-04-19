@@ -1,13 +1,10 @@
 import {
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
-  forwardRef,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
-import { ArticleService } from '../article/article.service';
-import { CommentService } from '../comment/comment.service';
+import { Role } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { User, UserRole } from './user.interface';
@@ -16,101 +13,101 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @Inject(forwardRef(() => ArticleService))
-    private readonly articleService: ArticleService,
-    @Inject(forwardRef(() => CommentService))
-    private readonly commentService: CommentService,
-  ) {}
-  private users: User[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll(
+  async findAll(
     pagination?: PaginationDto,
-  ): PaginatedResult<Partial<User>> | Partial<User>[] {
-    const result = [...this.users];
+  ): Promise<PaginatedResult<any> | any[]> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      order = 'ASC',
+    } = pagination || {};
+
+    const total = await this.prisma.user.count();
 
     if (pagination?.page || pagination?.limit) {
-      const {
-        page = 1,
-        limit = 10,
-        sortBy = 'createdAt',
-        order = 'ASC',
-      } = pagination;
-
-      if (sortBy) {
-        result.sort((a, b) => {
-          const valA = a[sortBy as keyof User];
-          const valB = b[sortBy as keyof User];
-          if (valA < valB) return order === 'ASC' ? -1 : 1;
-          if (valA > valB) return order === 'ASC' ? 1 : -1;
-          return 0;
-        });
-      }
-
-      const total = result.length;
-      const startIndex = (page - 1) * limit;
-      const data = result
-        .slice(startIndex, startIndex + limit)
-        .map((user) => this.toResponse(user));
+      const users = await this.prisma.user.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          [sortBy]: order.toLowerCase(),
+        },
+      });
 
       return {
         total,
         page,
         limit,
-        data,
+        data: users.map((user) => this.toResponse(user as unknown as User)),
       };
     }
 
-    return this.users.map((user) => this.toResponse(user));
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.toResponse(user as unknown as User));
   }
 
-  findOne(id: string) {
-    const user = this.users.find((u) => u.id === id);
+  async findOne(id: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return user;
+    return user as unknown as User;
   }
 
-  findOneResponse(id: string) {
-    return this.toResponse(this.findOne(id));
+  async findOneResponse(id: string) {
+    return this.toResponse(await this.findOne(id));
   }
 
-  create(createUserDto: CreateUserDto) {
-    const now = Date.now();
-    const newUser: User = {
-      id: randomUUID(),
-      ...createUserDto,
-      role: createUserDto.role || UserRole.VIEWER,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.users.push(newUser);
-    return this.toResponse(newUser);
+  async create(createUserDto: CreateUserDto) {
+    const newUser = await this.prisma.user.create({
+      data: {
+        ...createUserDto,
+        role: (createUserDto.role || UserRole.VIEWER) as Role,
+      },
+    });
+    return this.toResponse(newUser as unknown as User);
   }
 
-  updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
-    const user = this.findOne(id);
+  async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto) {
+    const user = await this.findOne(id);
     if (user.password !== updatePasswordDto.oldPassword) {
       throw new ForbiddenException('Old password is wrong');
     }
-    user.password = updatePasswordDto.newPassword;
-    user.updatedAt = Date.now();
-    return this.toResponse(user);
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        password: updatePasswordDto.newPassword,
+      },
+    });
+
+    return this.toResponse(updatedUser as unknown as User);
   }
 
-  remove(id: string) {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-    this.users.splice(index, 1);
-    this.articleService.clearAuthorId(id);
-    this.commentService.removeByAuthorId(id);
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.article.updateMany({
+        where: { authorId: id },
+        data: { authorId: null },
+      });
+
+      await tx.user.delete({
+        where: { id },
+      });
+    });
   }
 
   private toResponse(user: User) {
-    const result = { ...user };
+    const result = {
+      ...user,
+      createdAt: user.createdAt.getTime(),
+      updatedAt: user.updatedAt.getTime(),
+    };
     delete (result as any).password;
     return result;
   }
