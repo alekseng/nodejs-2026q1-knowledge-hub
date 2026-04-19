@@ -33,7 +33,6 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'All user records' })
   @ApiForbiddenResponse({ description: 'Only admins can access user list' })
@@ -42,7 +41,6 @@ export class UserController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get single user by id' })
   @ApiResponse({ status: 200, description: 'The record found' })
   @ApiBadRequestResponse({ description: 'UserId is invalid (not uuid)' })
@@ -53,7 +51,7 @@ export class UserController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Create user' })
   @ApiResponse({ status: 201, description: 'Newly created record' })
   @ApiBadRequestResponse({
@@ -65,7 +63,7 @@ export class UserController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @ApiOperation({ summary: "Update user's password" })
   @ApiResponse({ status: 200, description: 'Updated record' })
   @ApiBadRequestResponse({ description: 'UserId is invalid (not uuid)' })
@@ -81,7 +79,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user' })
   @ApiNoContentResponse({ description: 'The record is found and deleted' })
@@ -89,6 +87,6 @@ export class UserController {
   @ApiNotFoundResponse({ description: 'Record not found' })
   @ApiForbiddenResponse({ description: 'Only admins can delete users' })
   remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    this.userService.remove(id);
+    return this.userService.remove(id);
   }
 }

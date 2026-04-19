@@ -49,7 +49,7 @@ export class CategoryController {
   }
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Create new category' })
   @ApiResponse({ status: 201, description: 'Newly created record' })
   @ApiBadRequestResponse({
@@ -61,7 +61,7 @@ export class CategoryController {
   }
 
   @Put(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Update category info' })
   @ApiResponse({ status: 200, description: 'Updated record' })
   @ApiBadRequestResponse({ description: 'CategoryId is invalid (not uuid)' })
@@ -75,7 +75,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
   @ApiNoContentResponse({ description: 'The record is found and deleted' })
@@ -83,6 +83,6 @@ export class CategoryController {
   @ApiNotFoundResponse({ description: 'Record not found' })
   @ApiForbiddenResponse({ description: 'Only admins can manage categories' })
   remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    this.categoryService.remove(id);
+    return this.categoryService.remove(id);
   }
 }

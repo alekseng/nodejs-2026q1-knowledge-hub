@@ -62,11 +62,8 @@ export class CommentController {
   @ApiUnprocessableEntityResponse({
     description: "Referenced articleId doesn't exist",
   })
-  create(
-    @Body() createCommentDto: CreateCommentDto,
-    @GetUser('userId') userId: string,
-  ) {
-    return this.commentService.create(createCommentDto, userId);
+  create(@Body() createCommentDto: CreateCommentDto) {
+    return this.commentService.create(createCommentDto);
   }
 
   @Delete(':id')
@@ -82,6 +79,6 @@ export class CommentController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @GetUser() user: any,
   ) {
-    this.commentService.remove(id, user);
+    return this.commentService.remove(id, user);
   }
 }

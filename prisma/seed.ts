@@ -15,7 +15,7 @@ async function main() {
     create: {
       login: 'admin',
       password: adminPassword,
-      role: Role.ADMIN,
+      role: Role.admin,
     },
   });
 
@@ -25,7 +25,7 @@ async function main() {
     create: {
       login: 'editor',
       password: editorPassword,
-      role: Role.EDITOR,
+      role: Role.editor,
     },
   });
 
@@ -77,7 +77,7 @@ async function main() {
       id: 'article-1-id',
       title: 'Getting Started with Prisma',
       content: 'Prisma is a great ORM...',
-      status: Status.PUBLISHED,
+      status: Status.published,
       authorId: admin.id,
       categoryId: category1.id,
       tags: { connect: [{ name: 'NodeJS' }, { name: 'Prisma' }] },
@@ -91,7 +91,7 @@ async function main() {
       id: 'article-2-id',
       title: 'Dockerizing NestJS',
       content: 'Docker makes deployment easy...',
-      status: Status.PUBLISHED,
+      status: Status.published,
       authorId: editor.id,
       categoryId: category1.id,
       tags: { connect: [{ name: 'Docker' }, { name: 'NestJS' }] },
@@ -105,7 +105,7 @@ async function main() {
       id: 'article-3-id',
       title: 'TypeScript Best Practices',
       content: 'Learn how to use TypeScript...',
-      status: Status.DRAFT,
+      status: Status.draft,
       authorId: admin.id,
       categoryId: category1.id,
       tags: { connect: [{ name: 'TypeScript' }] },
@@ -119,7 +119,7 @@ async function main() {
       id: 'article-4-id',
       title: 'Daily News 2026',
       content: 'What is happening today...',
-      status: Status.PUBLISHED,
+      status: Status.published,
       authorId: admin.id,
       categoryId: category3.id,
     },
@@ -132,7 +132,7 @@ async function main() {
       id: 'article-5-id',
       title: 'Lifestyle in 2026',
       content: 'Healthy habits...',
-      status: Status.ARCHIVED,
+      status: Status.archived,
       authorId: editor.id,
       categoryId: category2.id,
     },

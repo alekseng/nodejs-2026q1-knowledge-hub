@@ -82,16 +82,12 @@ export class ArticleService {
     return this.mapToArticle(article);
   }
 
-  async create(
-    createArticleDto: CreateArticleDto,
-    authorId: string,
-  ): Promise<Article> {
+  async create(createArticleDto: CreateArticleDto): Promise<Article> {
     const { tags, ...data } = createArticleDto;
 
     const article = await this.prisma.article.create({
       data: {
         ...data,
-        authorId,
         status: (createArticleDto.status || ArticleStatus.DRAFT) as Status,
         tags: {
           connectOrCreate: tags?.map((tag) => ({
@@ -113,7 +109,7 @@ export class ArticleService {
   ): Promise<Article> {
     const articleToUpdate = await this.findOne(id);
 
-    if (user.role !== Role.ADMIN && articleToUpdate.authorId !== user.userId) {
+    if (user.role !== Role.admin && articleToUpdate.authorId !== user.userId) {
       throw new ForbiddenException('You can only update your own articles');
     }
 
@@ -149,7 +145,7 @@ export class ArticleService {
   async remove(id: string, user: any): Promise<void> {
     const articleToDelete = await this.findOne(id);
 
-    if (user.role !== Role.ADMIN && articleToDelete.authorId !== user.userId) {
+    if (user.role !== Role.admin && articleToDelete.authorId !== user.userId) {
       throw new ForbiddenException('You can only delete your own articles');
     }
 

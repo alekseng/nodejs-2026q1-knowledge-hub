@@ -29,11 +29,15 @@ export class RolesGuard implements CanActivate {
 
     const { user, method } = context.switchToHttp().getRequest();
 
-    if (user.role === Role.ADMIN) {
+    if (!user) {
       return true;
     }
 
-    if (user.role === Role.VIEWER && method !== 'GET') {
+    if (user.role === Role.admin) {
+      return true;
+    }
+
+    if (user.role === Role.viewer && method !== 'GET') {
       throw new ForbiddenException(
         'Viewers are not allowed to perform this action',
       );

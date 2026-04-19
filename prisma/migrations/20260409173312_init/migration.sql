@@ -1,6 +1,6 @@
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'EDITOR', 'VIEWER');
+CREATE TYPE "Role" AS ENUM ('admin', 'editor', 'viewer');
 
-CREATE TYPE "Status" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+CREATE TYPE "Status" AS ENUM ('draft', 'published', 'archived');
 
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE "Comment" (
     "id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "authorId" TEXT NOT NULL,
+    "authorId" TEXT,
     "articleId" TEXT NOT NULL,
 
     CONSTRAINT "Comment_pkey" PRIMARY KEY ("id")

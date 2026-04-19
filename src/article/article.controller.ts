@@ -56,11 +56,8 @@ export class ArticleController {
   @ApiForbiddenResponse({
     description: 'Viewers are not allowed to create articles',
   })
-  create(
-    @Body() createArticleDto: CreateArticleDto,
-    @GetUser('userId') userId: string,
-  ) {
-    return this.articleService.create(createArticleDto, userId);
+  create(@Body() createArticleDto: CreateArticleDto) {
+    return this.articleService.create(createArticleDto);
   }
 
   @Put(':id')
@@ -92,6 +89,6 @@ export class ArticleController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @GetUser() user: any,
   ) {
-    this.articleService.remove(id, user);
+    return this.articleService.remove(id, user);
   }
 }

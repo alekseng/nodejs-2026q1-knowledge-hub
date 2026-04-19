@@ -12,7 +12,7 @@ describe('ArticleService (Hacker Scope)', () => {
     id: `id${i}`,
     title: `Article ${i}`,
     content: 'Content',
-    status: Status.DRAFT,
+    status: Status.draft,
     authorId: null,
     categoryId: null,
     createdAt: new Date(1000 + i),
@@ -74,7 +74,7 @@ describe('ArticleService (Hacker Scope)', () => {
       ...a,
       id: `id${i}`,
       content: 'C',
-      status: Status.DRAFT,
+      status: Status.draft,
       authorId: 'authorId',
       categoryId: 'categoryId',
     }));

@@ -15,11 +15,8 @@ import { CommentPaginationDto } from './dto/comment-pagination.dto';
 export class CommentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    createCommentDto: CreateCommentDto,
-    authorId: string,
-  ): Promise<Comment> {
-    const { articleId, content } = createCommentDto;
+  async create(createCommentDto: CreateCommentDto): Promise<Comment> {
+    const { articleId, content, authorId } = createCommentDto;
 
     const article = await this.prisma.article.findUnique({
       where: { id: articleId },
@@ -34,7 +31,7 @@ export class CommentService {
       data: {
         content,
         articleId,
-        authorId,
+        authorId: authorId ?? null,
       },
     });
 
@@ -90,7 +87,7 @@ export class CommentService {
   async remove(id: string, user: any): Promise<void> {
     const commentToDelete = await this.findOne(id);
 
-    if (user.role !== Role.ADMIN && commentToDelete.authorId !== user.userId) {
+    if (user.role !== Role.admin && commentToDelete.authorId !== user.userId) {
       throw new ForbiddenException('You can only delete your own comments');
     }
 
