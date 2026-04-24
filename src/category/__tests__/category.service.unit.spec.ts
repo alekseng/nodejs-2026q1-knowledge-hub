@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../../common/errors';
 import { CategoryService } from '../category.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -78,12 +78,10 @@ describe('CategoryService', () => {
       expect(result.name).toBe('Technology');
     });
 
-    it('throws NotFoundException when category does not exist', async () => {
+    it('throws NotFoundError when category does not exist', async () => {
       prisma.category.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('bad-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('bad-id')).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -110,11 +108,11 @@ describe('CategoryService', () => {
       expect(result.name).toBe('Updated');
     });
 
-    it('throws NotFoundException when category does not exist', async () => {
+    it('throws NotFoundError when category does not exist', async () => {
       prisma.category.update.mockRejectedValue(new Error('Record not found'));
 
       await expect(service.update('bad-id', { name: 'X' })).rejects.toThrow(
-        NotFoundException,
+        NotFoundError,
       );
     });
   });
@@ -129,10 +127,10 @@ describe('CategoryService', () => {
       });
     });
 
-    it('throws NotFoundException when category does not exist', async () => {
+    it('throws NotFoundError when category does not exist', async () => {
       prisma.category.delete.mockRejectedValue(new Error('Record not found'));
 
-      await expect(service.remove('bad-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('bad-id')).rejects.toThrow(NotFoundError);
     });
   });
 });

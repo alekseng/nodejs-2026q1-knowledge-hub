@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ForbiddenException,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { AppError, ForbiddenError, NotFoundError } from '../../common/errors';
 import { CommentService } from '../comment.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Role } from '@prisma/client';
@@ -72,7 +68,7 @@ describe('CommentService', () => {
           articleId: 'bad-art-id',
           authorId: 'u1',
         }),
-      ).rejects.toThrow(UnprocessableEntityException);
+      ).rejects.toThrow(AppError);
     });
 
     it('sets authorId to null when not provided', async () => {
@@ -149,9 +145,7 @@ describe('CommentService', () => {
     it('throws NotFoundException when comment does not exist', async () => {
       prisma.comment.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('bad-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('bad-id')).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -184,7 +178,7 @@ describe('CommentService', () => {
       );
 
       await expect(service.remove('comment-uuid-1', otherUser)).rejects.toThrow(
-        ForbiddenException,
+        ForbiddenError,
       );
     });
 
@@ -192,7 +186,7 @@ describe('CommentService', () => {
       prisma.comment.findUnique.mockResolvedValue(null);
 
       await expect(service.remove('bad-id', adminUser)).rejects.toThrow(
-        NotFoundException,
+        NotFoundError,
       );
     });
   });
