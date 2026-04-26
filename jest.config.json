@@ -4,5 +4,7 @@
   "testEnvironment": "node",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "globalSetup": "<rootDir>/test/setup/seedAdmin.ts",
+  "globalTeardown": "<rootDir>/test/setup/teardown.ts"
 }

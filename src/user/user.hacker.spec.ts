@@ -13,7 +13,7 @@ describe('UserService (Hacker Scope)', () => {
     id: `id${i}`,
     login: `User${i}`,
     password: 'password',
-    role: Role.VIEWER,
+    role: Role.viewer,
     createdAt: new Date(1000 + i),
     updatedAt: new Date(1000 + i),
   }));
@@ -76,7 +76,7 @@ describe('UserService (Hacker Scope)', () => {
       ...u,
       id: `id${i}`,
       password: 'p',
-      role: Role.VIEWER,
+      role: Role.viewer,
     }));
 
     jest.spyOn(prisma.user, 'count').mockResolvedValue(3);

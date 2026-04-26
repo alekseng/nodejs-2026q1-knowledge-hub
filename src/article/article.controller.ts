@@ -13,12 +13,14 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -51,6 +53,9 @@ export class ArticleController {
   @ApiBadRequestResponse({
     description: 'Request body does not contain required fields',
   })
+  @ApiForbiddenResponse({
+    description: 'Viewers are not allowed to create articles',
+  })
   create(@Body() createArticleDto: CreateArticleDto) {
     return this.articleService.create(createArticleDto);
   }
@@ -60,11 +65,15 @@ export class ArticleController {
   @ApiResponse({ status: 200, description: 'Updated record' })
   @ApiBadRequestResponse({ description: 'ArticleId is invalid (not uuid)' })
   @ApiNotFoundResponse({ description: 'Record not found' })
+  @ApiForbiddenResponse({
+    description: 'Not authorized to update this article',
+  })
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateArticleDto: UpdateArticleDto,
+    @GetUser() user: any,
   ) {
-    return this.articleService.update(id, updateArticleDto);
+    return this.articleService.update(id, updateArticleDto, user);
   }
 
   @Delete(':id')
@@ -73,7 +82,13 @@ export class ArticleController {
   @ApiNoContentResponse({ description: 'The record is found and deleted' })
   @ApiBadRequestResponse({ description: 'ArticleId is invalid (not uuid)' })
   @ApiNotFoundResponse({ description: 'Record not found' })
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    this.articleService.remove(id);
+  @ApiForbiddenResponse({
+    description: 'Not authorized to delete this article',
+  })
+  remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @GetUser() user: any,
+  ) {
+    return this.articleService.remove(id, user);
   }
 }

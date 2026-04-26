@@ -8,26 +8,35 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
-  EDITOR
-  VIEWER
+  admin
+  editor
+  viewer
 }
 
 enum Status {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  draft
+  published
+  archived
 }
 
 model User {
-  id        String    @id @default(uuid())
-  login     String    @unique
-  password  String
-  role      Role
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  articles  Article[]
-  comments  Comment[]
+  id            String         @id @default(uuid())
+  login         String         @unique
+  password      String
+  role          Role
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  articles      Article[]
+  comments      Comment[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model Article {
@@ -59,8 +68,8 @@ model Comment {
   id        String   @id @default(uuid())
   content   String
   createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  String
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String?
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   articleId String
 }

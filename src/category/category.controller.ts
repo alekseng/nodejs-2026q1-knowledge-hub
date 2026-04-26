@@ -13,12 +13,15 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -46,20 +49,24 @@ export class CategoryController {
   }
 
   @Post()
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Create new category' })
   @ApiResponse({ status: 201, description: 'Newly created record' })
   @ApiBadRequestResponse({
     description: 'Request body does not contain required fields',
   })
+  @ApiForbiddenResponse({ description: 'Only admins can manage categories' })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
 
   @Put(':id')
+  @Roles(Role.admin)
   @ApiOperation({ summary: 'Update category info' })
   @ApiResponse({ status: 200, description: 'Updated record' })
   @ApiBadRequestResponse({ description: 'CategoryId is invalid (not uuid)' })
   @ApiNotFoundResponse({ description: 'Record not found' })
+  @ApiForbiddenResponse({ description: 'Only admins can manage categories' })
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -68,12 +75,14 @@ export class CategoryController {
   }
 
   @Delete(':id')
+  @Roles(Role.admin)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category' })
   @ApiNoContentResponse({ description: 'The record is found and deleted' })
   @ApiBadRequestResponse({ description: 'CategoryId is invalid (not uuid)' })
   @ApiNotFoundResponse({ description: 'Record not found' })
+  @ApiForbiddenResponse({ description: 'Only admins can manage categories' })
   remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
-    this.categoryService.remove(id);
+    return this.categoryService.remove(id);
   }
 }
