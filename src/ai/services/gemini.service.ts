@@ -1,0 +1,128 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AppError } from '../../common/errors';
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content: { parts: Array<{ text: string }> };
+    finishReason: string;
+  }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
+}
+
+export interface GeminiResult {
+  text: string;
+  totalTokens: number;
+}
+
+const RETRY_ATTEMPTS = 3;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+@Injectable()
+export class GeminiService {
+  private readonly logger = new Logger(GeminiService.name);
+  private readonly apiKey: string;
+  private readonly baseUrl: string;
+  private readonly model: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.apiKey = this.configService.get<string>('GEMINI_API_KEY', '');
+    this.baseUrl = this.configService.get<string>(
+      'GEMINI_API_BASE_URL',
+      'https://generativelanguage.googleapis.com',
+    );
+    this.model = this.configService.get<string>(
+      'GEMINI_MODEL',
+      'gemini-2.0-flash',
+    );
+  }
+
+  async generate(prompt: string): Promise<GeminiResult> {
+    const url = `${this.baseUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+    });
+
+    let lastError: AppError = new AppError(
+      503,
+      'AI service is temporarily unavailable',
+    );
+
+    for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30_000);
+
+        let response: Response;
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          this.logger.error('Gemini API authentication failed');
+          throw new AppError(500, 'AI service configuration error');
+        }
+
+        if (response.status === 429) {
+          if (attempt < RETRY_ATTEMPTS - 1) {
+            await sleep(Math.pow(2, attempt) * 1000);
+            continue;
+          }
+          lastError = new AppError(
+            503,
+            'AI service rate limit exceeded. Please try again later.',
+          );
+          break;
+        }
+
+        if (!response.ok) {
+          if (attempt < RETRY_ATTEMPTS - 1) {
+            await sleep(Math.pow(2, attempt) * 1000);
+            continue;
+          }
+          lastError = new AppError(
+            503,
+            'AI service is temporarily unavailable',
+          );
+          break;
+        }
+
+        const data = (await response.json()) as GeminiResponse;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        const totalTokens = data.usageMetadata?.totalTokenCount ?? 0;
+
+        return { text, totalTokens };
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+
+        const isAbort =
+          error instanceof Error &&
+          (error.name === 'AbortError' || error.name === 'TimeoutError');
+
+        lastError = isAbort
+          ? new AppError(503, 'AI service request timed out')
+          : new AppError(503, 'AI service is temporarily unavailable');
+
+        if (attempt < RETRY_ATTEMPTS - 1) {
+          await sleep(Math.pow(2, attempt) * 1000);
+        }
+      }
+    }
+
+    throw lastError;
+  }
+}
