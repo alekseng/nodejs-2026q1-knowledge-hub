@@ -11,6 +11,7 @@ import { CommentModule } from './comment/comment.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { AiModule } from './ai/ai.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -24,6 +25,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     CategoryModule,
     UserModule,
     AuthModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
