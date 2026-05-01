@@ -12,6 +12,7 @@ import { AiCacheService } from './services/ai-cache.service';
 import { AiUsageService } from './services/ai-usage.service';
 import { GeminiService } from './services/gemini.service';
 import { AiRateLimitGuard } from './guards/ai-rate-limit.guard';
+import { ConversationService } from './services/conversation.service';
 import { SummarizeArticleDto } from './dto/summarize-article.dto';
 import { TranslateArticleDto } from './dto/translate-article.dto';
 import { AnalyzeArticleDto } from './dto/analyze-article.dto';
@@ -37,6 +38,7 @@ export class AiController {
     private readonly geminiService: GeminiService,
     private readonly cacheService: AiCacheService,
     private readonly usageService: AiUsageService,
+    private readonly conversationService: ConversationService,
   ) {}
 
   @Post('articles/:articleId/summarize')
@@ -184,11 +186,22 @@ export class AiController {
   @Post('generate')
   @HttpCode(200)
   async generate(@Body() dto: GenerateDto) {
+    const sessionId =
+      dto.sessionId ?? this.conversationService.createSessionId();
+    const history = this.conversationService.getHistory(sessionId);
+
     const t0 = Date.now();
-    const { text, totalTokens } = await this.geminiService.generate(dto.prompt);
+    const { text, totalTokens } = await this.geminiService.generateWithHistory(
+      history,
+      dto.prompt,
+    );
     this.usageService.trackLatency('generate', Date.now() - t0);
     this.usageService.track('generate', totalTokens);
-    return { text: text.trim() };
+
+    const reply = text.trim();
+    this.conversationService.addMessages(sessionId, dto.prompt, reply);
+
+    return { sessionId, text: reply };
   }
 
   @Get('usage')

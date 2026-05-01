@@ -2,14 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppError } from '../../common/errors';
 
+interface GeminiMessage {
+  role: 'user' | 'model';
+  parts: [{ text: string }];
+}
+
 interface GeminiResponse {
   candidates?: Array<{
     content: { parts: Array<{ text: string }> };
     finishReason: string;
   }>;
   usageMetadata?: {
-    promptTokenCount?: number;
-    candidatesTokenCount?: number;
     totalTokenCount?: number;
   };
 }
@@ -44,11 +47,23 @@ export class GeminiService {
     );
   }
 
-  async generate(prompt: string): Promise<GeminiResult> {
+  generate(prompt: string): Promise<GeminiResult> {
+    return this.callGemini([{ role: 'user', parts: [{ text: prompt }] }]);
+  }
+
+  generateWithHistory(
+    history: GeminiMessage[],
+    prompt: string,
+  ): Promise<GeminiResult> {
+    return this.callGemini([
+      ...history,
+      { role: 'user', parts: [{ text: prompt }] },
+    ]);
+  }
+
+  private async callGemini(contents: GeminiMessage[]): Promise<GeminiResult> {
     const url = `${this.baseUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
-    const body = JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-    });
+    const body = JSON.stringify({ contents });
 
     let lastError: AppError = new AppError(
       503,
