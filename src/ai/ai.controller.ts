@@ -19,6 +19,10 @@ import { GenerateDto } from './dto/generate.dto';
 import { buildSummarizePrompt } from './prompts/summarize.prompt';
 import { buildTranslatePrompt } from './prompts/translate.prompt';
 import { buildAnalyzePrompt } from './prompts/analyze.prompt';
+import {
+  validateAnalyzeResponse,
+  validateTranslateResponse,
+} from './utils/validate-ai-response';
 
 function extractJson(text: string): string {
   const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -114,12 +118,13 @@ export class AiController {
     let detectedLanguage = dto.sourceLanguage ?? 'unknown';
 
     try {
-      const parsed = JSON.parse(extractJson(text)) as {
-        translatedText: string;
-        detectedLanguage: string;
-      };
-      translatedText = parsed.translatedText;
-      detectedLanguage = parsed.detectedLanguage;
+      const validated = validateTranslateResponse(
+        JSON.parse(extractJson(text)),
+      );
+      if (validated) {
+        translatedText = validated.translatedText;
+        detectedLanguage = validated.detectedLanguage;
+      }
     } catch {
       // Gemini returned plain text instead of JSON
     }
@@ -147,14 +152,12 @@ export class AiController {
     let severity: 'info' | 'warning' | 'error' = 'info';
 
     try {
-      const parsed = JSON.parse(extractJson(text)) as {
-        analysis: string;
-        suggestions: string[];
-        severity: 'info' | 'warning' | 'error';
-      };
-      analysis = parsed.analysis;
-      suggestions = parsed.suggestions ?? [];
-      severity = parsed.severity ?? 'info';
+      const validated = validateAnalyzeResponse(JSON.parse(extractJson(text)));
+      if (validated) {
+        analysis = validated.analysis;
+        suggestions = validated.suggestions;
+        severity = validated.severity;
+      }
     } catch {
       // Gemini returned plain text instead of JSON
     }
