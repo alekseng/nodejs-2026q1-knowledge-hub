@@ -61,14 +61,21 @@ export class AiController {
       originalLength: number;
       summaryLength: number;
     }>(cacheKey);
-    if (cached) return cached;
+
+    if (cached) {
+      this.usageService.trackCache(true);
+      return cached;
+    }
+    this.usageService.trackCache(false);
 
     const prompt = buildSummarizePrompt(
       article.title,
       article.content,
       maxLength,
     );
+    const t0 = Date.now();
     const { text, totalTokens } = await this.geminiService.generate(prompt);
+    this.usageService.trackLatency('summarize', Date.now() - t0);
     this.usageService.track('summarize', totalTokens);
 
     const summary = text.trim();
@@ -104,14 +111,21 @@ export class AiController {
       translatedText: string;
       detectedLanguage: string;
     }>(cacheKey);
-    if (cached) return cached;
+
+    if (cached) {
+      this.usageService.trackCache(true);
+      return cached;
+    }
+    this.usageService.trackCache(false);
 
     const prompt = buildTranslatePrompt(
       article.content,
       dto.targetLanguage,
       dto.sourceLanguage,
     );
+    const t0 = Date.now();
     const { text, totalTokens } = await this.geminiService.generate(prompt);
+    this.usageService.trackLatency('translate', Date.now() - t0);
     this.usageService.track('translate', totalTokens);
 
     let translatedText = text.trim();
@@ -144,7 +158,9 @@ export class AiController {
     const task = dto.task ?? 'review';
 
     const prompt = buildAnalyzePrompt(article.title, article.content, task);
+    const t0 = Date.now();
     const { text, totalTokens } = await this.geminiService.generate(prompt);
+    this.usageService.trackLatency('analyze', Date.now() - t0);
     this.usageService.track('analyze', totalTokens);
 
     let analysis = text.trim();
@@ -168,7 +184,9 @@ export class AiController {
   @Post('generate')
   @HttpCode(200)
   async generate(@Body() dto: GenerateDto) {
+    const t0 = Date.now();
     const { text, totalTokens } = await this.geminiService.generate(dto.prompt);
+    this.usageService.trackLatency('generate', Date.now() - t0);
     this.usageService.track('generate', totalTokens);
     return { text: text.trim() };
   }
