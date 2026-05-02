@@ -43,7 +43,7 @@ export class GeminiService {
     );
     this.model = this.configService.get<string>(
       'GEMINI_MODEL',
-      'gemini-2.0-flash',
+      'gemini-2.5-flash',
     );
   }
 
