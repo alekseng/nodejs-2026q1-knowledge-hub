@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from '../../common/errors';
 import { UserRole } from '../user.interface';
 import { Role } from '@prisma/client';
 
@@ -119,7 +119,7 @@ describe('UserService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(
-        NotFoundException,
+        NotFoundError,
       );
     });
   });
@@ -175,7 +175,7 @@ describe('UserService', () => {
 
       await expect(
         service.create({ login: 'testuser', password: 'pw' } as any),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(ValidationError);
     });
 
     it('returns user without password field', async () => {
@@ -234,7 +234,7 @@ describe('UserService', () => {
           oldPassword: 'wrong',
           newPassword: 'new',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('throws NotFoundException when user does not exist', async () => {
@@ -245,7 +245,7 @@ describe('UserService', () => {
           oldPassword: 'x',
           newPassword: 'y',
         }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -269,9 +269,7 @@ describe('UserService', () => {
     it('throws NotFoundException when user does not exist', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('missing-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.remove('missing-id')).rejects.toThrow(NotFoundError);
     });
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '../../common/errors';
 import { ArticleService } from '../article.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ArticleStatus } from '../article.interface';
@@ -133,9 +133,7 @@ describe('ArticleService', () => {
     it('throws NotFoundException when article does not exist', async () => {
       prisma.article.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('bad-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('bad-id')).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -238,7 +236,7 @@ describe('ArticleService', () => {
 
       await expect(
         service.update('art-uuid-1', { title: 'Hack' } as any, otherUser),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('throws NotFoundException when article does not exist', async () => {
@@ -246,7 +244,7 @@ describe('ArticleService', () => {
 
       await expect(
         service.update('bad-id', { title: 'X' } as any, adminUser),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('resets and reconnects tags on update', async () => {
@@ -336,7 +334,7 @@ describe('ArticleService', () => {
       );
 
       await expect(service.remove('art-uuid-1', otherUser)).rejects.toThrow(
-        ForbiddenException,
+        ForbiddenError,
       );
     });
 
@@ -344,7 +342,7 @@ describe('ArticleService', () => {
       prisma.article.findUnique.mockResolvedValue(null);
 
       await expect(service.remove('bad-id', adminUser)).rejects.toThrow(
-        NotFoundException,
+        NotFoundError,
       );
     });
   });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenError, UnauthorizedError } from '../../common/errors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth.service';
@@ -92,7 +92,7 @@ describe('AuthService', () => {
 
       await expect(
         service.login({ login: 'ghost', password: 'pw' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('throws ForbiddenException when password is wrong', async () => {
@@ -101,7 +101,7 @@ describe('AuthService', () => {
 
       await expect(
         service.login({ login: 'alice', password: 'wrong' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('stores refresh token in database', async () => {
@@ -147,7 +147,7 @@ describe('AuthService', () => {
     it('throws UnauthorizedException when refreshToken is missing', async () => {
       await expect(
         service.refresh({ refreshToken: undefined }),
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(UnauthorizedError);
     });
 
     it('throws ForbiddenException when token is expired or invalid', async () => {
@@ -155,7 +155,7 @@ describe('AuthService', () => {
 
       await expect(
         service.refresh({ refreshToken: 'bad-token' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('throws ForbiddenException when token not found in DB (invalidated)', async () => {
@@ -168,7 +168,7 @@ describe('AuthService', () => {
 
       await expect(
         service.refresh({ refreshToken: 'orphan-token' }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     it('rotates refresh token — deletes old, creates new', async () => {

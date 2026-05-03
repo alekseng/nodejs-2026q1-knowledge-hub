@@ -1,12 +1,12 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from '../common/errors';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { PaginatedResult } from '../common/interfaces/paginated-result.interface';
 import { User, UserRole } from './user.interface';
@@ -55,7 +55,7 @@ export class UserService {
       where: { id },
     });
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      throw new NotFoundError(`User with id ${id} not found`);
     }
     return user as unknown as User;
   }
@@ -70,7 +70,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new BadRequestException('Login is already taken');
+      throw new ValidationError('Login is already taken');
     }
 
     const rounds = parseInt(process.env.CRYPT_SALT, 10) || 10;
@@ -100,7 +100,7 @@ export class UserService {
     );
 
     if (!isPasswordMatching) {
-      throw new ForbiddenException('Old password is wrong');
+      throw new ForbiddenError('Old password is wrong');
     }
 
     const rounds = parseInt(process.env.CRYPT_SALT, 10) || 10;

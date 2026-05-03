@@ -1,8 +1,5 @@
-import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ForbiddenError, UnauthorizedError } from '../common/errors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -28,7 +25,7 @@ export class AuthService {
     const user = await this.userService.findByLogin(loginDto.login);
 
     if (!user) {
-      throw new ForbiddenException('Authentication failed');
+      throw new ForbiddenError('Authentication failed');
     }
 
     const isPasswordMatching = await bcrypt.compare(
@@ -37,7 +34,7 @@ export class AuthService {
     );
 
     if (!isPasswordMatching) {
-      throw new ForbiddenException('Authentication failed');
+      throw new ForbiddenError('Authentication failed');
     }
 
     return this.generateTokens(user.id, user.login, user.role);
@@ -45,7 +42,7 @@ export class AuthService {
 
   async refresh(refreshDto: RefreshDto) {
     if (!refreshDto.refreshToken) {
-      throw new UnauthorizedException('Refresh token is missing');
+      throw new UnauthorizedError('Refresh token is missing');
     }
 
     let payload: any;
@@ -54,14 +51,14 @@ export class AuthService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
     } catch {
-      throw new ForbiddenException('Refresh token is invalid or expired');
+      throw new ForbiddenError('Refresh token is invalid or expired');
     }
 
     const tokenRecord = await this.prisma.refreshToken.findUnique({
       where: { token: refreshDto.refreshToken },
     });
     if (!tokenRecord) {
-      throw new ForbiddenException('Refresh token has been invalidated');
+      throw new ForbiddenError('Refresh token has been invalidated');
     }
 
     await this.prisma.refreshToken.delete({

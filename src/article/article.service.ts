@@ -1,8 +1,5 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ForbiddenError, NotFoundError } from '../common/errors';
 import { Role, Status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -77,7 +74,7 @@ export class ArticleService {
       include: { tags: true },
     });
     if (!article) {
-      throw new NotFoundException(`Article with id ${id} not found`);
+      throw new NotFoundError(`Article with id ${id} not found`);
     }
     return this.mapToArticle(article);
   }
@@ -110,7 +107,7 @@ export class ArticleService {
     const articleToUpdate = await this.findOne(id);
 
     if (user.role !== Role.admin && articleToUpdate.authorId !== user.userId) {
-      throw new ForbiddenException('You can only update your own articles');
+      throw new ForbiddenError('You can only update your own articles');
     }
 
     const { tags, ...data } = updateArticleDto;
@@ -138,7 +135,7 @@ export class ArticleService {
 
       return this.mapToArticle(article);
     } catch (error) {
-      throw new NotFoundException(`Article with id ${id} not found`);
+      throw new NotFoundError(`Article with id ${id} not found`);
     }
   }
 
@@ -146,7 +143,7 @@ export class ArticleService {
     const articleToDelete = await this.findOne(id);
 
     if (user.role !== Role.admin && articleToDelete.authorId !== user.userId) {
-      throw new ForbiddenException('You can only delete your own articles');
+      throw new ForbiddenError('You can only delete your own articles');
     }
 
     try {
@@ -154,7 +151,7 @@ export class ArticleService {
         where: { id },
       });
     } catch (error) {
-      throw new NotFoundException(`Article with id ${id} not found`);
+      throw new NotFoundError(`Article with id ${id} not found`);
     }
   }
 
