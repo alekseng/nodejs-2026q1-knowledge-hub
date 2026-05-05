@@ -22,6 +22,23 @@ services:
       timeout: 5s
       retries: 5
 
+  vectordb:
+    image: qdrant/qdrant:latest
+    container_name: knowledge-hub-vectordb
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:6333/readyz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
@@ -30,6 +47,8 @@ services:
     restart: on-failure
     depends_on:
       db:
+        condition: service_healthy
+      vectordb:
         condition: service_healthy
     command: >
       sh -c "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public npx prisma migrate deploy --preview-feature || true &&
@@ -66,3 +85,4 @@ networks:
 
 volumes:
   postgres_data:
+  qdrant_data:
