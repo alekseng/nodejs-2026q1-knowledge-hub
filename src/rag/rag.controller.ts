@@ -12,10 +12,14 @@ import { RagChatRequestDto } from './dto/rag-chat-request.dto';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
 import { RagIndexService } from './services/rag-index.service';
+import { RagSearchService } from './services/rag-search.service';
 
 @Controller('ai/rag')
 export class RagController {
-  constructor(private readonly ragIndex: RagIndexService) {}
+  constructor(
+    private readonly ragIndex: RagIndexService,
+    private readonly ragSearch: RagSearchService,
+  ) {}
 
   @Post('index')
   @HttpCode(HttpStatus.OK)
@@ -25,8 +29,8 @@ export class RagController {
 
   @Post('search')
   @HttpCode(HttpStatus.OK)
-  search(@Body() _dto: RagSearchRequestDto) {
-    return { results: [] };
+  search(@Body() dto: RagSearchRequestDto) {
+    return this.ragSearch.search(dto);
   }
 
   @Post('chat')
