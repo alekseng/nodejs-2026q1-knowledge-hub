@@ -11,13 +11,16 @@ import {
 import { RagChatRequestDto } from './dto/rag-chat-request.dto';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
+import { RagIndexService } from './services/rag-index.service';
 
 @Controller('ai/rag')
 export class RagController {
+  constructor(private readonly ragIndex: RagIndexService) {}
+
   @Post('index')
   @HttpCode(HttpStatus.OK)
-  index(@Body() _dto: ReindexRequestDto) {
-    return { indexedArticles: 0, indexedChunks: 0, vectorCollection: '' };
+  index(@Body() dto: ReindexRequestDto) {
+    return this.ragIndex.index(dto);
   }
 
   @Post('search')
@@ -34,8 +37,8 @@ export class RagController {
 
   @Delete('index/articles/:articleId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteArticleIndex(@Param('articleId') _articleId: string) {
-    return;
+  async deleteArticleIndex(@Param('articleId') articleId: string) {
+    await this.ragIndex.deleteArticle(articleId);
   }
 
   @Get('chat/:conversationId/history')
