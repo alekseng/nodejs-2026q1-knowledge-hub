@@ -11,6 +11,8 @@ import {
 import { RagChatRequestDto } from './dto/rag-chat-request.dto';
 import { RagSearchRequestDto } from './dto/rag-search-request.dto';
 import { ReindexRequestDto } from './dto/reindex-request.dto';
+import { RagChatService } from './services/rag-chat.service';
+import { RagConversationService } from './services/rag-conversation.service';
 import { RagIndexService } from './services/rag-index.service';
 import { RagSearchService } from './services/rag-search.service';
 
@@ -19,6 +21,8 @@ export class RagController {
   constructor(
     private readonly ragIndex: RagIndexService,
     private readonly ragSearch: RagSearchService,
+    private readonly ragChat: RagChatService,
+    private readonly ragConversation: RagConversationService,
   ) {}
 
   @Post('index')
@@ -35,8 +39,8 @@ export class RagController {
 
   @Post('chat')
   @HttpCode(HttpStatus.OK)
-  chat(@Body() _dto: RagChatRequestDto) {
-    return { answer: '', sources: [], conversationId: '' };
+  chat(@Body() dto: RagChatRequestDto) {
+    return this.ragChat.chat(dto);
   }
 
   @Delete('index/articles/:articleId')
@@ -46,7 +50,7 @@ export class RagController {
   }
 
   @Get('chat/:conversationId/history')
-  getHistory(@Param('conversationId') _conversationId: string) {
-    return { messages: [] };
+  getHistory(@Param('conversationId') conversationId: string) {
+    return { messages: this.ragConversation.getHistory(conversationId) };
   }
 }
