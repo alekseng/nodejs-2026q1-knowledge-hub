@@ -31,8 +31,6 @@ export interface SearchResult {
   similarity: number;
 }
 
-const VECTOR_SIZE = 768;
-
 function chunkPointId(articleId: string, chunkIndex: number): string {
   const hash = createHash('sha256')
     .update(`${articleId}:${chunkIndex}`)
@@ -51,6 +49,7 @@ export class QdrantService implements OnModuleInit {
   private readonly logger = new Logger(QdrantService.name);
   private readonly client: QdrantClient;
   private readonly collection: string;
+  private readonly vectorSize: number;
 
   constructor(private readonly configService: ConfigService) {
     const url = this.configService.get<string>(
@@ -61,23 +60,51 @@ export class QdrantService implements OnModuleInit {
       'RAG_VECTOR_COLLECTION',
       'knowledge_hub_articles',
     );
+    this.vectorSize = Number(this.configService.get('RAG_VECTOR_SIZE', 3072));
     this.client = new QdrantClient({ url });
   }
 
   async onModuleInit() {
-    await this.ensureCollection();
+    const maxAttempts = 12;
+    const delayMs = 5_000;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await this.ensureCollection();
+        return;
+      } catch {
+        if (attempt < maxAttempts) {
+          this.logger.warn(
+            `Vector DB not ready (attempt ${attempt}/${maxAttempts}), retrying in ${delayMs / 1000}s…`,
+          );
+          await new Promise((r) => setTimeout(r, delayMs));
+        } else {
+          this.logger.warn(
+            'Vector DB unavailable at startup — will retry on first request',
+          );
+        }
+      }
+    }
   }
 
-  private async ensureCollection(): Promise<void> {
+  async ensureCollection(): Promise<void> {
     try {
       const exists = await this.client.collectionExists(this.collection);
       if (!exists.exists) {
-        await this.client.createCollection(this.collection, {
-          vectors: { size: VECTOR_SIZE, distance: 'Cosine' },
-        });
-        this.logger.log(`Created Qdrant collection: ${this.collection}`);
+        try {
+          await this.client.createCollection(this.collection, {
+            vectors: { size: this.vectorSize, distance: 'Cosine' },
+          });
+          this.logger.log(`Created Qdrant collection: ${this.collection}`);
+        } catch {
+          const nowExists = await this.client.collectionExists(this.collection);
+          if (!nowExists.exists) {
+            throw new Error('Failed to create Qdrant collection');
+          }
+        }
       }
     } catch (error) {
+      if (error instanceof AppError) throw error;
       this.logger.error('Failed to connect to vector DB', {
         error: String(error),
       });
@@ -91,6 +118,7 @@ export class QdrantService implements OnModuleInit {
 
   async upsertChunks(points: ChunkPoint[]): Promise<void> {
     if (!points.length) return;
+    await this.ensureCollection();
     try {
       await this.client.upsert(this.collection, {
         wait: true,
@@ -109,6 +137,7 @@ export class QdrantService implements OnModuleInit {
   }
 
   async deleteByArticleId(articleId: string): Promise<number> {
+    await this.ensureCollection();
     try {
       const result = await this.client.delete(this.collection, {
         wait: true,
@@ -131,6 +160,7 @@ export class QdrantService implements OnModuleInit {
     limit: number,
     filter?: SearchFilter,
   ): Promise<SearchResult[]> {
+    await this.ensureCollection();
     const must: object[] = [];
 
     if (filter?.articleStatus) {

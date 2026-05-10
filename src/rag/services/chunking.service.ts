@@ -12,10 +12,9 @@ export class ChunkingService {
   private readonly chunkOverlap: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.chunkSize = this.configService.get<number>('RAG_CHUNK_SIZE', 800);
-    this.chunkOverlap = this.configService.get<number>(
-      'RAG_CHUNK_OVERLAP',
-      200,
+    this.chunkSize = Number(this.configService.get('RAG_CHUNK_SIZE', 800));
+    this.chunkOverlap = Number(
+      this.configService.get('RAG_CHUNK_OVERLAP', 200),
     );
   }
 

@@ -103,6 +103,10 @@ export class GeminiService {
         }
 
         if (!response.ok) {
+          const body = await response.text().catch(() => '');
+          this.logger.error(
+            `Gemini embedding HTTP ${response.status}: ${body.slice(0, 300)}`,
+          );
           if (attempt < RETRY_ATTEMPTS - 1) {
             await sleep(Math.pow(2, attempt) * 1000);
             continue;

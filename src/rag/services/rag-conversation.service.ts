@@ -20,9 +20,8 @@ export class RagConversationService {
   private readonly maxMessages: number;
 
   constructor(private readonly configService: ConfigService) {
-    this.maxMessages = this.configService.get<number>(
-      'RAG_CONVERSATION_MAX_MESSAGES',
-      20,
+    this.maxMessages = Number(
+      this.configService.get('RAG_CONVERSATION_MAX_MESSAGES', 20),
     );
   }
 
