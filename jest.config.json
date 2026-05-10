@@ -1,8 +1,14 @@
 {
   "moduleFileExtensions": ["ts", "js"],
-  "rootDir": "test",
+  "rootDir": ".",
   "testEnvironment": "node",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "testMatch": [
+    "<rootDir>/test/**/*.spec.ts",
+    "<rootDir>/src/**/*.hacker.spec.ts"
+  ],
+  "globalSetup": "<rootDir>/test/setup/seedAdmin.ts",
+  "globalTeardown": "<rootDir>/test/setup/teardown.ts"
 }
