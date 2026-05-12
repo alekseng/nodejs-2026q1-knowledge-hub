@@ -48,7 +48,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     );
 
     response.status(statusCode).json(
-      statusCode >= 500
+      statusCode === 500
         ? {
             statusCode: 500,
             error: 'Internal Server Error',

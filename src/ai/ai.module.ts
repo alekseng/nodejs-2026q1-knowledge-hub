@@ -15,5 +15,6 @@ import { ConversationService } from './services/conversation.service';
     AiRateLimitGuard,
     ConversationService,
   ],
+  exports: [GeminiService],
 })
 export class AiModule {}
